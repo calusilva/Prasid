@@ -32,6 +32,10 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
+
+# pedidos de proposta gravados localmente (fallback sem Resend)
+/proposals
 
 # vercel
 .vercel

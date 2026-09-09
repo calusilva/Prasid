@@ -1,26 +1,178 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ───────────────────────────────────────────────────────────────────────────
+   TOKENS GLOBAIS
+   As fontes vêm de next/font (layout.tsx) como --font-serif / --font-sans.
+─────────────────────────────────────────────────────────────────────────── */
+@theme {
+  --font-serif: var(--font-fraunces), Georgia, "Times New Roman", serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
+  --ease-drape: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* ───────────────────────────────────────────────────────────────────────────
+   PALETAS POR SECÇÃO
+   Cada tema define o mesmo conjunto de variáveis; os componentes leem-nas
+   através de utilitários arbitrários, ex.: bg-[var(--bg)] text-[var(--ink)].
+─────────────────────────────────────────────────────────────────────────── */
+
+/* Home — neutros soft: bege, off-white, grafite. Ponte entre as duas áreas. */
+.theme-home {
+  --bg: #f4f1ec;
+  --bg-elev: #ffffff;
+  --surface: #ebe6dd;
+  --ink: #2b2b2e;
+  --ink-soft: #5c5a55;
+  --line: #d9d3c7;
+  --accent: #8a8578;
+  --accent-ink: #ffffff;
+  color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Têxteis — terrosos quentes: caramelo, terracota, creme, castanho tostado. */
+.theme-texteis {
+  --bg: #e7dccb;
+  --bg-elev: #f6efe2;
+  --surface: #dcc8ab;
+  --ink: #3a2417;
+  --ink-soft: #6b4a34;
+  --line: #c9ad88;
+  --accent: #b4632f;
+  --accent-2: #d9a441;
+  --accent-ink: #fdf6ea;
+  color-scheme: light;
+}
+
+/* Químicos — roxos técnicos frios: roxo profundo, lilás, ciano, cinza metálico. */
+.theme-quimicos {
+  --bg: #141019;
+  --bg-elev: #1e1828;
+  --surface: #271f38;
+  --ink: #ede9f5;
+  --ink-soft: #a99fc4;
+  --line: #3a3150;
+  --accent: #7c4dff;
+  --accent-2: #22d3ee;
+  --accent-ink: #0c0a12;
+  color-scheme: dark;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   BASE
+─────────────────────────────────────────────────────────────────────────── */
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg, #f4f1ec);
+  color: var(--ink, #2b2b2e);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: var(--accent, #8a8578);
+  color: var(--accent-ink, #fff);
+}
+
+/* Transição de paleta suave ao mudar de secção. */
+.section-themed {
+  background: var(--bg);
+  color: var(--ink);
+  transition:
+    background-color 0.6s var(--ease-drape),
+    color 0.6s var(--ease-drape);
+}
+
+.font-serif {
+  font-family: var(--font-serif);
+  font-optical-sizing: auto;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   TEXTURAS DE FUNDO (CSS puro — sem imagens)
+─────────────────────────────────────────────────────────────────────────── */
+
+/* Papel / grão fino — Home */
+.texture-paper {
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(0, 0, 0, 0.035) 1px, transparent 0);
+  background-size: 4px 4px;
+}
+
+/* Trama de tecido — Têxteis */
+.texture-weave {
+  background-image:
+    repeating-linear-gradient(
+      45deg,
+      rgba(58, 36, 23, 0.05) 0 2px,
+      transparent 2px 6px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      rgba(58, 36, 23, 0.04) 0 2px,
+      transparent 2px 6px
+    );
+}
+
+/* Grelha técnica / milimétrico — Químicos */
+.texture-grid {
+  background-image:
+    linear-gradient(rgba(124, 77, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(124, 77, 255, 0.08) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   MICRO-INTERAÇÕES
+─────────────────────────────────────────────────────────────────────────── */
+
+/* Ondulação suave de tecido ao passar o rato (Têxteis). */
+@keyframes fabric-ripple {
+  0% { transform: perspective(600px) rotateX(0deg) translateY(0); }
+  50% { transform: perspective(600px) rotateX(1.4deg) translateY(-2px); }
+  100% { transform: perspective(600px) rotateX(0deg) translateY(0); }
+}
+.hover-ripple {
+  transition: transform 0.5s var(--ease-drape), box-shadow 0.5s var(--ease-drape);
+}
+.hover-ripple:hover {
+  animation: fabric-ripple 1.6s var(--ease-drape) infinite;
+}
+
+/* Linha de "scan" técnica (Químicos). */
+@keyframes tech-scan {
+  0% { background-position: 0 -100%; }
+  100% { background-position: 0 200%; }
+}
+
+.link-underline {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-size: 0% 1px;
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  transition: background-size 0.4s var(--ease-drape);
+}
+.link-underline:hover {
+  background-size: 100% 1px;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   ACESSIBILIDADE
+─────────────────────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }

@@ -1,36 +1,116 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Prasid Ibérica — Website institucional
 
-## Getting Started
+Site da **Prasid Ibérica – Comércio de Químicos e Têxteis, Lda** (fundada em
+1986 como David Andrade, Lda). Três áreas com identidade visual própria:
 
-First, run the development server:
+| Página        | Rota        | Paleta                        | Animação temática                         |
+| ------------- | ----------- | ----------------------------- | ---------------------------------------- |
+| **Home**      | `/`         | neutros soft (bege / grafite) | scroll que "divide" o ecrã em duas áreas |
+| **Químicos**  | `/quimicos` | roxo / ciano técnico frio     | gotas fluidas reativas a rato e scroll   |
+| **Têxteis**   | `/texteis`  | terrosos quentes (terracota)  | cortina a abrir + configurador de calhas |
+
+## Stack
+
+- **Next.js 16** (App Router) + **React 19** + **TypeScript**
+- **Tailwind CSS v4** (configuração em `src/app/globals.css`, sem `tailwind.config`)
+- **motion** (Framer Motion) para animações
+- **Resend** + **Zod** no endpoint de propostas
+
+## Arrancar
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env.local   # opcional — ver secção "Envio de propostas"
+npm run dev                  # http://localhost:3000
+npm run build && npm start   # produção
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Estrutura
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+src/
+├── app/
+│   ├── layout.tsx              Header/Footer, fontes, metadata + JSON-LD
+│   ├── page.tsx                Home
+│   ├── quimicos/page.tsx
+│   ├── texteis/page.tsx
+│   └── api/proposta/route.ts   recebe o pedido do configurador
+├── components/
+│   ├── layout/                 Header, Footer, SectionThemer
+│   ├── ui/                     Container, Button, Reveal, SectionHeading
+│   ├── shared/ContactBlock.tsx
+│   ├── home/                   Hero, SplitAreas, About
+│   ├── quimicos/               QuimicosHero, FluidCanvas, CategoryGrid, ...
+│   └── texteis/
+│       ├── CurtainReveal, TexteisHero, FabricGrid, TexteisIntro
+│       └── configurator/       CalhaConfigurator (wizard) + ProposalSummary
+└── lib/
+    ├── company.ts              ← dados institucionais (morada, telefone, história)
+    ├── themes.ts               ← paletas por secção
+    ├── divisions.ts            ← textos e categorias das duas divisões
+    ├── configurator-options.ts ← opções do wizard (calhas, materiais, tecidos)
+    └── pricing.ts              ← motor de estimativa de preço
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Sistema de temas
 
-## Learn More
+Cada página é envolvida por `<SectionThemer section="...">`, que aplica uma
+classe (`.theme-home` / `.theme-texteis` / `.theme-quimicos`). Essas classes
+definem as CSS custom properties (`--bg`, `--ink`, `--accent`, …) em
+`globals.css`. Os componentes leem sempre `bg-[var(--bg)]`,
+`text-[var(--ink)]` — **nunca cores hardcoded**. Trocar de secção troca
+paleta + textura de fundo + temperatura da animação.
 
-To learn more about Next.js, take a look at the following resources:
+## Configurador de calhas
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Wizard de 5 passos em `src/components/texteis/configurator/`:
+tipo de calha → material → tecido → medidas → contacto → resumo.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+A **estimativa atualiza em tempo real**. Toda a matemática está isolada em
+`src/lib/pricing.ts`:
 
-## Deploy on Vercel
+```ts
+export const PRECO_M2 = 45;          // €/m² — VALOR DE EXEMPLO, ajustar
+export const TAXA_IVA = 0.23;        // usar 0 para esconder o IVA
+export const MULT_CALHA = { ... };   // multiplicador por tipo de calha
+export const MULT_MATERIAL = { ... };
+export const MULT_ACABAMENTO = { ... };
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Para adicionar/remover opções, editar `src/lib/configurator-options.ts`
+(os `id` têm de coincidir com as chaves dos multiplicadores em `pricing.ts`).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Envio de propostas
+
+O botão **"Pedir Proposta"** faz `POST /api/proposta`. O handler:
+
+1. valida os dados com Zod;
+2. **se `RESEND_API_KEY` estiver definida** → envia email HTML formatado
+   (tabela com cliente + configuração + valor estimado) para `PROPOSAL_TO_EMAIL`;
+3. **caso contrário, ou em falha de envio** → grava o pedido em
+   `./proposals/<data>_<nome>.json` para não se perder o lead.
+
+Variáveis (`.env.local`):
+
+```
+RESEND_API_KEY=            # https://resend.com/api-keys
+PROPOSAL_TO_EMAIL=geral@prasidiberica.pt
+PROPOSAL_FROM_EMAIL="Prasid Ibérica <onboarding@resend.dev>"
+```
+
+> Em produção, `PROPOSAL_FROM_EMAIL` tem de usar um domínio verificado no Resend.
+> A pasta `proposals/` está no `.gitignore`.
+
+## Conteúdo a rever
+
+- Textos institucionais (missão, valores) — rascunho em `src/lib/company.ts`.
+- `email.general` é um endereço assumido (`geral@prasidiberica.pt`) — confirmar.
+- Imagens de produto: atualmente placeholders (blocos de cor / gradientes).
+- Preços do configurador: todos de exemplo (ver `pricing.ts`).
+
+## Acessibilidade e performance
+
+- `prefers-reduced-motion` respeitado (canvas desligado, animações neutralizadas).
+- Canvas de partículas em `dynamic(..., { ssr: false })` e pausado fora do ecrã.
+- Mapa em `<iframe loading="lazy">`, sem API key.
+- Mobile-first, sem scroll horizontal.
